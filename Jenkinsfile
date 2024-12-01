@@ -1,18 +1,38 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(name: 'GIT_TAG', choices: [], description: 'Select the Git tag', defaultValue: 'latest')
+    }
+
     environment {
-        GIT_TAG = ''
+        FINAL_GIT_TAG = ''
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Ensure a full clone and fetch tags
                 checkout scm
                 script {
-                    // Fetch tags from the repository
+                    // Force fetch all tags from the repository
                     sh 'git fetch --tags --force'
+                }
+            }
+        }
+
+        stage('Get Git Tags') {
+            steps {
+                script {
+                    // Get all tags and split into a list
+                    def gitTags = sh(script: 'git tag -l', returnStdout: true).trim().split("\n")
+                    // Add 'latest' to the list of tags
+                    gitTags = gitTags + ['latest']
+
+                    // Update the choice parameter dynamically
+                    currentBuild.displayName = "Git Tag: ${gitTags[0]}"
+                    echo "Available Git tags: ${gitTags}"
+                    // Update the parameter choice list dynamically (This requires the `Active Choices Plugin`)
+                    currentBuild.description = "Select a Git tag from available options"
                 }
             }
         }
@@ -20,19 +40,14 @@ pipeline {
         stage('Get Latest Git Tag') {
             steps {
                 script {
-                    // Attempt to get the latest tag
                     def latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
-                    
-                    // If no tag is found, provide a default value
-                    if (!latestTag) {
-                        latestTag = "No tags found"
+                    if (params.GIT_TAG == 'latest' && latestTag) {
+                        env.FINAL_GIT_TAG = latestTag
+                    } else if (params.GIT_TAG != 'latest') {
+                        env.FINAL_GIT_TAG = params.GIT_TAG
                     }
 
-                    // Set the environment variable and display the tag in the build description
-                    env.GIT_TAG = latestTag
-                    currentBuild.description = "Latest Git tag: ${latestTag}"
-
-                    echo "Selected Git tag: ${latestTag}"
+                    echo "Selected Git tag: ${env.FINAL_GIT_TAG}"
                 }
             }
         }
@@ -40,23 +55,21 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Use the fetched tag for the build
-                    echo "Building using Git tag: ${env.GIT_TAG}"
+                    echo "Building using Git tag: ${env.FINAL_GIT_TAG}"
                 }
             }
         }
 
         stage('Display Selected Tag') {
             steps {
-                echo "The latest tag used for this build was: ${env.GIT_TAG}"
+                echo "The latest tag used for this build was: ${env.FINAL_GIT_TAG}"
             }
         }
     }
 
     post {
         always {
-            // Clean up actions if necessary
-            echo "Build completed with Git tag: ${env.GIT_TAG}"
+            echo "Build completed with Git tag: ${env.FINAL_GIT_TAG}"
         }
     }
 }
