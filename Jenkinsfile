@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'GIT_TAG', choices: [], description: 'Select the Git tag', defaultValue: 'latest')
+        // Define a parameter to allow users to select the Git tag
+        choice(name: 'GIT_TAG', choices: ['latest'], description: 'Select the Git tag', defaultValue: 'latest')
     }
 
     environment {
@@ -20,30 +21,17 @@ pipeline {
             }
         }
 
-        stage('Get Git Tags') {
-            steps {
-                script {
-                    // Get all tags and split into a list
-                    def gitTags = sh(script: 'git tag -l', returnStdout: true).trim().split("\n")
-                    // Add 'latest' to the list of tags
-                    gitTags = gitTags + ['latest']
-
-                    // Update the choice parameter dynamically
-                    currentBuild.displayName = "Git Tag: ${gitTags[0]}"
-                    echo "Available Git tags: ${gitTags}"
-                    // Update the parameter choice list dynamically (This requires the `Active Choices Plugin`)
-                    currentBuild.description = "Select a Git tag from available options"
-                }
-            }
-        }
-
         stage('Get Latest Git Tag') {
             steps {
                 script {
+                    // Fetch the latest tag from the repository
                     def latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+
+                    // If no tag is selected or found, use the latest tag automatically
                     if (params.GIT_TAG == 'latest' && latestTag) {
                         env.FINAL_GIT_TAG = latestTag
                     } else if (params.GIT_TAG != 'latest') {
+                        // Use the selected tag from the parameter
                         env.FINAL_GIT_TAG = params.GIT_TAG
                     }
 
@@ -55,6 +43,7 @@ pipeline {
         stage('Build') {
             steps {
                 script {
+                    // Proceed with the build using the selected/final Git tag
                     echo "Building using Git tag: ${env.FINAL_GIT_TAG}"
                 }
             }
