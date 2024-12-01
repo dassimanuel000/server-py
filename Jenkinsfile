@@ -1,32 +1,49 @@
-pipeline {
-    agent any
-
-    parameters {
-        activeChoiceParam('LATEST_TAG') {
-            description('Select the latest tag from the repository')
-            choiceType('SINGLE_SELECT') // Dropdown style
-            groovyScript {
-                script("""
-                    try {
-                        def process = "git describe --tags --abbrev=0".execute(null, new File("${WORKSPACE}"))
-                        def latestTag = process.text.trim()
-                        return [latestTag]
-                    } catch (Exception e) {
-                        return ["unknown"] // Default fallback in case of error
-                    }
-                """)
-                fallbackScript('"unknown"') // Fallback if script execution fails
-            }
-        }
-    }
-
-    stages {
-        stage('Use Tag') {
-            steps {
-                script {
-                    echo "Selected Tag: ${params.LATEST_TAG}"
-                }
-            }
-        }
-    }
-}
+properties([ 
+    parameters([
+        [
+            $class: 'ChoiceParameter', 
+            choiceType: 'PT_SINGLE_SELECT', 
+            description: 'Select a choice', 
+            filterLength: 1, 
+            filterable: true, 
+            name: 'choice1', 
+            randomName: 'choice-parameter-7601235200970', 
+            script: [
+                $class: 'GroovyScript', 
+                fallbackScript: [
+                    classpath: [], 
+                    sandbox: false, 
+                    script: 'return ["ERROR"]'
+                ], 
+                script: [
+                    classpath: [], 
+                    sandbox: false, 
+                    script: 'return[\'aaa\',\'bbb\']'
+                ]
+            ]
+        ], 
+        [
+            $class: 'CascadeChoiceParameter', 
+            choiceType: 'PT_SINGLE_SELECT', 
+            description: 'Active Choices Reactive parameter', 
+            filterLength: 1, 
+            filterable: true, 
+            name: 'choice2', 
+            randomName: 'choice-parameter-7601237141171', 
+            referencedParameters: 'choice1', 
+            script: [
+                $class: 'GroovyScript', 
+                fallbackScript: [
+                    classpath: [], 
+                    sandbox: false, 
+                    script: 'return ["error"]'
+                ], 
+                script: [
+                    classpath: [], 
+                    sandbox: false, 
+                    script: 'if(choice1.equals("aaa")){return [\'a\', \'b\']} else {return [\'aaaaaa\',\'fffffff\']}'
+                ]
+            ]
+        ]
+    ])
+])
