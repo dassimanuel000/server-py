@@ -1,21 +1,30 @@
+properties([
+    parameters([
+        [$class: 'CascadeChoiceParameter',
+         choiceType: 'PT_SINGLE_SELECT',
+         description: 'Select the latest tag',
+         name: 'RELEASE_NUMBER',
+         script: [$class: 'GroovyScript',
+                  script: [script: '''
+                      try {
+                          def latestTag = "git describe --tags --abbrev=0".execute().text.trim()
+                          return [latestTag]
+                      } catch (Exception e) {
+                          return ["unknown"]
+                      }
+                  ''',
+                           fallbackScript: 'return ["unknown"]']]
+        ]
+    ])
+])
+
 pipeline {
-    agent none
-
-    environment {
-        LATEST_TAG = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
-    }
-
-    parameters {
-        choice(name: 'RELEASE_NUMBER', 
-               choices: "${LATEST_TAG},unknown".split(','), 
-               description: 'Select the release number')
-    }
+    agent any
 
     stages {
-        stage('Display') {
-            agent any
+        stage('Verify Parameters') {
             steps {
-                echo "Selected tag: ${params.RELEASE_NUMBER}"
+                echo "Selected Release Number: ${params.RELEASE_NUMBER}"
             }
         }
     }
