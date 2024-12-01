@@ -3,6 +3,9 @@ pipeline {
     parameters {
         string(name: 'LATEST_TAG', defaultValue: '', description: 'Latest Git tag')
     }
+    environment {
+        GIT_TAG = ''
+    }
     stages {
         stage('Checkout Code') {
             steps {
@@ -15,15 +18,14 @@ pipeline {
                 script {
                     // Get the latest Git tag
                     def latestTag = sh(script: 'git fetch --tags && git describe --tags --abbrev=0', returnStdout: true).trim()
-                    
-                    // Check if the tag exists and set the default value of the parameter
+
+                    // Check if the tag exists and set the environment variable
                     if (latestTag) {
                         currentBuild.description = "Latest Git tag: ${latestTag}"
-                        // Set the value of the parameter in the pipeline
-                        params.LATEST_TAG = latestTag
+                        env.GIT_TAG = latestTag
                     } else {
                         currentBuild.description = "No Git tags found."
-                        params.LATEST_TAG = 'No tags found'
+                        env.GIT_TAG = 'No tags found'
                     }
                 }
             }
@@ -32,20 +34,20 @@ pipeline {
             steps {
                 script {
                     // Display the selected Git tag value
-                    echo "Selected Git tag: ${params.LATEST_TAG}"
+                    echo "Selected Git tag: ${env.GIT_TAG}"
                 }
             }
         }
         stage('Build') {
             steps {
-                echo "Building using Git tag: ${params.LATEST_TAG}"
+                echo "Building using Git tag: ${env.GIT_TAG}"
                 // Use the tag for your build process as needed
             }
         }
     }
     post {
         always {
-            echo "The latest tag used for this build was: ${params.LATEST_TAG}"
+            echo "The latest tag used for this build was: ${env.GIT_TAG}"
         }
     }
 }
