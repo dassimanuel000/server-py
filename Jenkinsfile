@@ -1,27 +1,30 @@
 pipeline {
     agent any
-    parameters {
-        string(name: 'LATEST_TAG', defaultValue: 'v0.0.0', description: 'The latest Git tag')
+    environment {
+        // Define the environment variable to store the latest tag
+        LATEST_TAG = ''
     }
     stages {
         stage('Get Latest Tag') {
             steps {
                 script {
-                    def latestTag = ''
-                    try {
-                        latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
-                    } catch (Exception e) {
-                        latestTag = 'v0.0.0' // Fallback to a default tag if no tags exist
-                    }
-                    echo "The latest tag is: ${latestTag}"
-                    env.LATEST_TAG = latestTag
+                    // Run the git command to get the latest tag and save it to a file
+                    sh 'git describe --tags --abbrev=0 > latest_tag.txt'
+                    
+                    // Read the latest tag from the file and store it in the environment variable
+                    LATEST_TAG = readFile('latest_tag.txt').trim()
+                    echo "Latest Git Tag: ${LATEST_TAG}"
                 }
             }
         }
+        
         stage('Build') {
             steps {
-                echo "Using tag: ${env.LATEST_TAG}"
-                // Continue with your build steps using the latestTag variable
+                script {
+                    // Use the LATEST_TAG value in your build process
+                    echo "Using the latest Git tag: ${LATEST_TAG}"
+                    // Your build steps go here, you can pass the LATEST_TAG to a build tool or process
+                }
             }
         }
     }
