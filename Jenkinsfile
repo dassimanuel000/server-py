@@ -4,6 +4,7 @@ pipeline {
     parameters {
         // Define a parameter to allow users to select the Git tag
         choice(name: 'GIT_TAG', choices: ['latest'], description: 'Select the Git tag', defaultValue: 'latest')
+
     }
 
     environment {
