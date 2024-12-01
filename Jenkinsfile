@@ -8,15 +8,17 @@ pipeline {
             steps {
                 script {
                     // Run the Git command to get the latest tag
-                    def latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                    def latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true, returnStatus: true).trim()
 
-                    // Update the description (optional) or pass it to other stages
-                    currentBuild.description = "Latest Git Tag: ${latestTag}"
+                    // Check if the command was successful (status 0 means success)
+                    if (latestTag) {
+                        echo "Latest tag found: ${latestTag}"
+                    } else {
+                        echo "No tags found, setting default value"
+                        latestTag = "No tags available"
+                    }
 
-                    // Set the parameter value (This does not dynamically set the UI parameter but sets a value)
-                    echo "Setting latest tag: ${latestTag}"
-
-                    // To use the value in subsequent stages, assign it to a parameter
+                    // Set the parameter value (this doesn't change the UI parameter dynamically but sets it in the pipeline)
                     env.LATEST_TAG = latestTag
                 }
             }
@@ -24,7 +26,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo "The latest tag is: ${env.LATEST_TAG}"
-                // You can use the LATEST_TAG environment variable in further stages
+                // Use the LATEST_TAG variable for your build steps
             }
         }
     }
