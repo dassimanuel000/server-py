@@ -1,29 +1,40 @@
 pipeline {
     agent any
     parameters {
-        // Define Uno Choice Parameter for Latest Tag
-        unoChoice(name: 'LATEST_TAG', 
-                  description: 'Latest Git tag',
-                  choices: { 
-                      // This script will fetch the latest tag dynamically
-                      def latestTag = sh(script: 'git fetch --tags --force && git describe --tags --abbrev=0', returnStdout: true).trim()
-                      return [latestTag] ?: ["No tags found"]  // Return the latest tag or a fallback
-                  })
+        activeChoiceParam('LATEST_TAG') {
+            description('Select the latest Git tag')
+            choiceType('PT_SINGLE_SELECT')
+            groovyScript {
+                script('''
+                    // Fetch the latest tags from Git repository
+                    def tag = sh(script: "git fetch --tags --force && git describe --tags --abbrev=0", returnStdout: true).trim()
+
+                    // If no tag found, set a default value or error message
+                    if (tag == '') {
+                        return ["No tags found"]
+                    } else {
+                        return [tag]
+                    }
+                ''')
+                fallbackScript('return ["Error fetching tags"]')
+            }
+        }
     }
     stages {
-        stage('Checkout SCM') {
+        stage('Get Latest Tag') {
             steps {
                 script {
-                    // Ensure all tags are fetched
-                    sh 'git fetch --tags --force'
+                    // Print out the selected tag in the Jenkins logs
+                    echo "Selected Git tag: ${params.LATEST_TAG}"
                 }
             }
         }
         stage('Build') {
             steps {
                 script {
-                    // Use the dynamically populated parameter
-                    echo "Building with the latest Git tag: ${params.LATEST_TAG}"
+                    // Use the selected tag for your build or deployment
+                    echo "Building with tag: ${params.LATEST_TAG}"
+                    // You can integrate the ${params.LATEST_TAG} into your build process here
                 }
             }
         }
