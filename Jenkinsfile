@@ -4,32 +4,22 @@ pipeline {
         stage('Git Init and Checkout Master') {
             steps {
                 script {
-                    // Vérifie si le dépôt est déjà initialisé
+                    // Vérifie si le dépôt est initialisé et configure l'utilisateur si nécessaire
                     sh '''
                     if [ ! -d ".git" ]; then
-                        echo "Initialisation du dépôt Git"
                         git init
-                        git config user.name "Jenkins"
-                        git config user.email "jenkins@localhost"
                     fi
-                    '''
-                    
-                    // Assurer que la branche 'master' existe, sinon créer et y basculer
-                    sh '''
+
+                    git config user.name "Jenkins"
+                    git config user.email "jenkins@localhost"
+
                     git fetch --all
                     if ! git show-ref --verify --quiet refs/heads/master; then
-                        echo "Branche master inexistante, création de master..."
                         git checkout -b master
                         git commit --allow-empty -m "Initial commit"
                     else
-                        echo "Branche master existante, basculement vers master..."
                         git checkout master
                     fi
-                    '''
-
-                    // Vérifier l'état du dépôt et afficher la branche actuelle
-                    sh '''
-                    git status
                     '''
                 }
             }
