@@ -1,60 +1,54 @@
 pipeline {
     agent any
-
-    environment {
-        FINAL_GIT_TAG = ''
-    }
-
     stages {
-        stage('Checkout') {
+        stage('Find Previous Tag') {
             steps {
-                checkout scm
                 script {
                     // Force fetch all tags from the repository
                     sh 'git fetch --tags --force'
 
-                }
-            }
-        }
+                    // Tag actuel fourni (par exemple, via une variable GitLab ou hardcodé ici)
+                    def currentTag = '1.1.0-RC.5' // Exemple : tag actuel
+                    def branch = 'release-1.1.0' // Exemple : branche de la série de tags
 
-        /*stage('Get Latest Git Tag') {
-            steps {
-                script {
-                    // Fetch the latest tag from the repository
-                    def latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                    // Appel de la fonction pour trouver le précédent tag
+                    def previousTag = findPreviousTag(currentTag, branch)
 
-                    // If no tag is selected or found, use the latest tag automatically
-                    if (params.GIT_TAG == 'latest' && latestTag) {
-                        env.FINAL_GIT_TAG = latestTag
-                    } else if (params.GIT_TAG != 'latest') {
-                        // Use the selected tag from the parameter
-                        env.FINAL_GIT_TAG = params.GIT_TAG
+                    // Afficher le résultat
+                    if (previousTag) {
+                        echo "Current Tag: ${currentTag}"
+                        echo "Previous Tag: ${previousTag}"
+                    } else {
+                        echo "No previous tag found for ${currentTag} on branch ${branch}."
                     }
-
-                    echo "Selected Git tag: ${env.FINAL_GIT_TAG}"
                 }
             }
         }
-
-        stage('Build') {
-            steps {
-                script {
-                    // Proceed with the build using the selected/final Git tag
-                    echo "Building using Git tag: ${env.FINAL_GIT_TAG}"
-                }
-            }
-        }
-
-        stage('Display Selected Tag') {
-            steps {
-                echo "The latest tag used for this build was: ${env.FINAL_GIT_TAG}"
-            }
-        }*/
     }
+}
 
-    post {
-        always {
-            cleanWs()
-        }
-    }
+def findPreviousTag(String currentTag, String branch) {
+    // Exécution de la commande Bash pour trouver le précédent tag
+    def previousTag = sh(
+        script: """
+        # Lister les tags triés par version uniquement sur la branche donnée
+        tags=\$(git tag --merged ${branch} --sort=v:refname)
+        previous=""
+        
+        # Parcourir les tags pour trouver le précédent
+        for tag in \$tags; do
+            if [[ "\$tag" == "${currentTag}" ]]; then
+                break
+            fi
+            previous=\$tag
+        done
+        
+        # Retourner le précédent tag trouvé
+        echo \$previous
+        """,
+        returnStdout: true
+    ).trim()
+
+    // Retourner le tag trouvé ou null s'il n'y en a pas
+    return previousTag ? previousTag : null
 }
