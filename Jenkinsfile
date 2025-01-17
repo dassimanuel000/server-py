@@ -26,28 +26,36 @@ pipeline {
 def findPreviousTag(String currentTag, String branch) {
     def previousTag = sh(
         script: """
-        tags=\$(git tag --merged ${branch} --sort=v:refname)
-        previous=""
-        
-        for tag in \$tags; do
-            if [[ \$tag =~ ^1\\.[0-9]+\\.[0-9]+-(RC|BETA)\\.[0-9]+\$ ]]; then
-                if [[ \$tag == "${currentTag}" ]]; then
-                    break
+        # First verify branch exists
+        if git rev-parse --verify ${branch} >/dev/null 2>&1; then
+            tags=\$(git tag --merged ${branch} --sort=v:refname)
+            previous=""
+            
+            for tag in \$tags; do
+                if [[ \$tag =~ ^1\\.[0-9]+\\.[0-9]+-(RC|BETA)\\.[0-9]+\$ ]]; then
+                    if [[ \$tag == "${currentTag}" ]]; then
+                        break
+                    fi
+                    previous=\$tag
                 fi
-                previous=\$tag
-            fi
-        done
-        
-        echo \$previous
+            done
+            
+            echo \$previous
+        else
+            echo "Branch ${branch} not found"
+            exit 1
+        fi
         """,
         returnStdout: true
     ).trim()
 
-    if (previousTag) {
+    
+    return previousTag
+    /*if (previousTag) {
         echo "Found previous tag: ${previousTag}"
     } else {
         echo "No previous tag found before ${currentTag}."
     }
 
-    return previousTag ? previousTag : null
+    return previousTag ? previousTag : null*/
 }
