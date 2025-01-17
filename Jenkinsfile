@@ -30,7 +30,7 @@ def findPreviousTag(String currentTag, String branch) {
         previous=""
         
         for tag in \$tags; do
-            if [[ \$tag =~ ^1\.[0-9]+\.[0-9]+-(RC|BETA)\.[0-9]+$ ]]; then
+            if [[ \$tag =~ ^1\\.[0-9]+\\.[0-9]+-(RC|BETA)\\.[0-9]+\$ ]]; then
                 if [[ \$tag == "${currentTag}" ]]; then
                     break
                 fi
