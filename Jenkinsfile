@@ -7,11 +7,11 @@ pipeline {
                     // Force fetch all tags from the repository
                     sh 'git fetch --tags --force'
 
-                    // Tag actuel fourni (par exemple, via une variable GitLab ou hardcodé ici)
-                    def currentTag = '1.1.0-RC.5' // Exemple : tag actuel
-                    def branch = 'release-1.1.0' // Exemple : branche de la série de tags
 
-                    // Appel de la fonction pour trouver le précédent tag
+                    def currentTag = '1.2.0-BETA.12' // Exemple : tag actuel
+                    def branch = 'master' // Exemple : branche de la série de tags
+
+
                     def previousTag = findPreviousTag(currentTag, branch)
 
                     // Afficher le résultat
@@ -28,19 +28,21 @@ pipeline {
 }
 
 def findPreviousTag(String currentTag, String branch) {
-    // Exécution de la commande Bash pour trouver le précédent tag
+    // Exécution de la commande Bash pour trouver tous les tags
     def previousTag = sh(
         script: """
-        # Lister les tags triés par version uniquement sur la branche donnée
         tags=\$(git tag --merged ${branch} --sort=v:refname)
+
         previous=""
         
-        # Parcourir les tags pour trouver le précédent
         for tag in \$tags; do
-            if [[ "\$tag" == "${currentTag}" ]]; then
-                break
+            if [[ "\$tag" =~ ^1\.[0-9]+\.[0-9]+-(RC|BETA)\.[0-9]+$ ]]; then
+                # Si on trouve le tag actuel, on arrête
+                if [[ "\$tag" == "${currentTag}" ]]; then
+                    break
+                fi
+                previous=\$tag
             fi
-            previous=\$tag
         done
         
         # Retourner le précédent tag trouvé
