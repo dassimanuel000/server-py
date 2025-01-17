@@ -48,14 +48,6 @@ def findPreviousTag(String currentTag, String branch) {
         """,
         returnStdout: true
     ).trim()
-
     
     return previousTag
-    /*if (previousTag) {
-        echo "Found previous tag: ${previousTag}"
-    } else {
-        echo "No previous tag found before ${currentTag}."
-    }
-
-    return previousTag ? previousTag : null*/
 }
