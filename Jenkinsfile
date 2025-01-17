@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    parameters {
-        // Define a parameter to allow users to select the Git tag
-        choice(name: 'GIT_TAG', choices: ['latest'], description: 'Select the Git tag')
-    }
-
     environment {
         FINAL_GIT_TAG = ''
     }
@@ -17,11 +12,12 @@ pipeline {
                 script {
                     // Force fetch all tags from the repository
                     sh 'git fetch --tags --force'
+
                 }
             }
         }
 
-        stage('Get Latest Git Tag') {
+        /*stage('Get Latest Git Tag') {
             steps {
                 script {
                     // Fetch the latest tag from the repository
@@ -53,12 +49,12 @@ pipeline {
             steps {
                 echo "The latest tag used for this build was: ${env.FINAL_GIT_TAG}"
             }
-        }
+        }*/
     }
 
     post {
         always {
-            echo "Build completed with Git tag: ${env.FINAL_GIT_TAG}"
+            cleanWs()
         }
     }
 }
