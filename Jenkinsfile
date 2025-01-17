@@ -4,8 +4,6 @@ pipeline {
         stage('Find Previous Tag') {
             steps {
                 script {
-                    sh 'git fetch --tags --force'
-
                     def currentTag = '1.2.0-BETA.12' // Exemple : tag actuel
                     def branch = 'master' // Exemple : branche de la série de tags
 
@@ -26,28 +24,29 @@ pipeline {
 def findPreviousTag(String currentTag, String branch) {
     def previousTag = sh(
         script: """
-        # First verify branch exists
-        if git rev-parse --verify ${branch} >/dev/null 2>&1; then
-            tags=\$(git tag --merged ${branch} --sort=v:refname)
-            previous=""
-            
-            for tag in \$tags; do
-                if [[ \$tag =~ ^1\\.[0-9]+\\.[0-9]+-(RC|BETA)\\.[0-9]+\$ ]]; then
-                    if [[ \$tag == "${currentTag}" ]]; then
-                        break
-                    fi
-                    previous=\$tag
+        git fetch --tags --force
+        tags=\$(git tag --merged ${branch} --sort=v:refname)
+        previous=""
+        
+        for tag in \$tags; do
+            if echo "\$tag" | grep -E '^1\\.[0-9]+\\.[0-9]+-(RC|BETA)\\.[0-9]+\$' > /dev/null; then
+                if [ "\$tag" = "${currentTag}" ]; then
+                    break
                 fi
-            done
-            
-            echo \$previous
-        else
-            echo "Branch ${branch} not found"
-            exit 1
-        fi
+                previous=\$tag
+            fi
+        done
+        
+        echo \$previous
         """,
         returnStdout: true
     ).trim()
-    
-    return previousTag
+
+    if (previousTag) {
+        echo "Found previous tag: ${previousTag}"
+    } else {
+        echo "No previous tag found before ${currentTag}."
+    }
+
+    return previousTag ? previousTag : null
 }
