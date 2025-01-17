@@ -25,9 +25,11 @@ def findPreviousTag(String currentTag, String branch) {
     def previousTag = sh(
         script: """
         git fetch --tags --force
+        echo "Tags available:"
+        git tag
         tags=\$(git tag --merged ${branch} --sort=v:refname)
         previous=""
-        
+
         for tag in \$tags; do
             if echo "\$tag" | grep -E '^1\\.[0-9]+\\.[0-9]+-(RC|BETA)\\.[0-9]+\$' > /dev/null; then
                 if [ "\$tag" = "${currentTag}" ]; then
@@ -36,7 +38,7 @@ def findPreviousTag(String currentTag, String branch) {
                 previous=\$tag
             fi
         done
-        
+
         echo \$previous
         """,
         returnStdout: true
